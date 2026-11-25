@@ -6,6 +6,8 @@ from emergence.models.transformer.config import TransformerConfig
 
 
 class CausalSelfAttention(nn.Module):
+    causal_mask: torch.Tensor
+
     def __init__(self, config: TransformerConfig):
         super().__init__()
 
@@ -30,7 +32,7 @@ class CausalSelfAttention(nn.Module):
 
         # Causal mask: prevents tokens from attending to future tokens (GPT-style)
         # This is an interesting detail
-        self.causal_mask = torch.tril(
+        causal_mask = torch.tril(
             torch.ones(
                 config.context_length,
                 config.context_length,
@@ -38,7 +40,7 @@ class CausalSelfAttention(nn.Module):
             )
         )
 
-        self.register_buffer("causal_mask", self.causal_mask)
+        self.register_buffer("causal_mask", causal_mask)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size, sequence_length, embedding_dim = x.shape
