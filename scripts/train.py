@@ -13,7 +13,7 @@ from emergence.training.checkpointing import save_checkpoint
 def main():
     # Paths
     project_root = Path(__file__).resolve().parents[1]
-    dataset_path = project_root / "data" / "my_dataset.txt"
+    dataset_path = project_root / "data" / "shakespeare.txt"
     checkpoint_dir = project_root / "checkpoints"
 
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -33,7 +33,7 @@ def main():
     # Model configuration
     config = TransformerConfig(
         vocab_size=tokenizer.vocab_size,
-        context_length=128,
+        context_length=256,
         embedding_dim=128,
         num_layers=4,
         num_heads=4,
@@ -48,7 +48,7 @@ def main():
 
     train_loader = DataLoader(
         dataset,
-        batch_size=16,
+        batch_size=32,
         shuffle=True,
     )
 
@@ -62,21 +62,42 @@ def main():
     )
 
     # Train
-    epochs = 10
-    history = trainer.train(epochs=epochs)
+    epochs = 15
+    history: list[float] = []
+    best_loss = float("inf")
 
-    # Save checkpoint
-    save_checkpoint(
-        model=trainer.model,
-        optimizer=trainer.optimizer,
-        epoch=epochs,
-        loss=history[-1],
-        path=str(checkpoint_dir / "final.pt"),
-    )
+    for epoch in range(epochs):
+        loss = trainer.train(epochs=1)[-1]
+        history.append(loss)
+
+        # Save latest checkpoint
+        save_checkpoint(
+            model=trainer.model,
+            optimizer=trainer.optimizer,
+            epoch=epoch + 1,
+            loss=loss,
+            path=str(checkpoint_dir / "latest.pt"),
+        )
+
+        # Save best checkpoint
+        if loss < best_loss:
+            best_loss = loss
+
+            save_checkpoint(
+                model=trainer.model,
+                optimizer=trainer.optimizer,
+                epoch=epoch + 1,
+                loss=loss,
+                path=str(checkpoint_dir / "best.pt"),
+            )
+
+        print(f"Epoch [{epoch + 1}/{epochs}] " f"Loss: {loss:.4f}")
 
     print("\nTraining complete!")
     print("Final loss:", history[-1])
-    print("Checkpoint saved:", checkpoint_dir / "final.pt")
+    print("Best loss:", best_loss)
+    print("Latest checkpoint:", checkpoint_dir / "latest.pt")
+    print("Best checkpoint:", checkpoint_dir / "best.pt")
 
 
 if __name__ == "__main__":

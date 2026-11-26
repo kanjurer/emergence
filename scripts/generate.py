@@ -12,8 +12,8 @@ from emergence.training.checkpointing import load_checkpoint
 def main():
     project_root = Path(__file__).resolve().parents[1]
 
-    dataset_path = project_root / "data" / "my_dataset.txt"
-    checkpoint_path = project_root / "checkpoints" / "final.pt"
+    dataset_path = project_root / "data" / "shakespeare.txt"
+    checkpoint_path = project_root / "checkpoints" / "best.pt"
 
     # Load training text and reconstruct tokenizer
     text = dataset_path.read_text(encoding="utf-8")
@@ -24,7 +24,7 @@ def main():
     # Reconstruct model configuration
     config = TransformerConfig(
         vocab_size=tokenizer.vocab_size,
-        context_length=128,
+        context_length=256,
         embedding_dim=128,
         num_layers=4,
         num_heads=4,
@@ -62,8 +62,8 @@ def main():
         if not prompt:
             continue
 
-        max_new_tokens = 3
-        temperature = 1.0
+        max_new_tokens = 128
+        temperature = 0.8
 
         # Encode prompt
         input_ids = torch.tensor(
@@ -81,7 +81,7 @@ def main():
         )
 
         # Decode only newly generated tokens
-        generated_ids: list[int] = output_ids[0, input_ids.shape[1] :].tolist()  # type: ignore (annoying)
+        generated_ids: list[int] = output_ids[0].tolist()  # type: ignore (annoying)
         generated_text = tokenizer.decode(generated_ids)
 
         print("\n=== Generated Text ===\n")
