@@ -1,4 +1,0 @@
-The cat sat on the mat.
-The dog played in the garden.
-The sun is shining today.
-Machine learning is fascinating.
