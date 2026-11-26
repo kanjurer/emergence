@@ -23,7 +23,6 @@ data/*
 !data/.gitkeep
 
 # Model checkpoints
-checkpoints/*
 !checkpoints/.gitkeep
 
 # Generated experiment artifacts
