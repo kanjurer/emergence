@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
-from emergence.data.tokenizer import CharacterTokenizer
+from emergence.data.tokenizer import CharacterTokenizer, SortingTokenizer
 from emergence.models.transformer.config import TransformerConfig
 from emergence.models.transformer.model import TransformerModel
 from emergence.models.transformer.generation import generate
@@ -14,7 +14,7 @@ class TextGenerator:
     def __init__(
         self,
         model: TransformerModel,
-        tokenizer: CharacterTokenizer,
+        tokenizer: CharacterTokenizer | SortingTokenizer,
         device: torch.device,
     ) -> None:
         self.model = model
@@ -27,24 +27,16 @@ class TextGenerator:
     @classmethod
     def from_checkpoint(
         cls,
-        dataset_path: Path,
         checkpoint_path: Path,
         config: TransformerConfig,
+        tokenizer: CharacterTokenizer | SortingTokenizer,
         device: torch.device | None = None,
     ) -> "TextGenerator":
         if device is None:
             device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
-        # Reconstruct tokenizer.
-        text = dataset_path.read_text(encoding="utf-8")
-
-        tokenizer = CharacterTokenizer()
-        tokenizer.fit(text)
-
-        # Initialize model.
         model = TransformerModel(config)
 
-        # Initialize optimizer required by checkpoint loader.
         optimizer = torch.optim.AdamW(
             model.parameters(),
             lr=3e-4,
@@ -52,7 +44,6 @@ class TextGenerator:
 
         model.to(device)
 
-        # Load checkpoint.
         load_checkpoint(
             model=model,
             optimizer=optimizer,
@@ -79,10 +70,21 @@ class TextGenerator:
         if temperature <= 0:
             raise ValueError("Temperature must be greater than zero.")
 
+        if isinstance(self.tokenizer, SortingTokenizer):
+            prompt_ids = self.tokenizer.encode_prompt(prompt)
+        else:
+            prompt_ids = self.tokenizer.encode(prompt)
+
         input_ids = torch.tensor(
-            [self.tokenizer.encode(prompt)],
+            [prompt_ids],
             dtype=torch.long,
             device=self.device,
+        )
+
+        eos_token_id = (
+            self.tokenizer.vocab["<EOS>"]
+            if isinstance(self.tokenizer, SortingTokenizer)
+            else None
         )
 
         output_ids: Tensor = generate(
@@ -90,8 +92,9 @@ class TextGenerator:
             input_ids=input_ids,
             max_new_tokens=max_new_tokens,
             temperature=temperature,
+            eos_token_id=eos_token_id,
         )
 
-        generated_ids: list[int] = output_ids[0].tolist()  # type: ignore
+        generated_ids: list[int] = output_ids[0].tolist()
 
         return self.tokenizer.decode(generated_ids)

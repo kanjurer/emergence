@@ -28,6 +28,7 @@ def train_model(
     learning_rate: float = 3e-4,
     checkpoint_dir: Path | None = None,
     resume_from: Path | None = None,
+    pad_token_id: int | None = None,
 ) -> TrainingRun:
     if epochs <= 0:
         raise ValueError("epochs must be greater than zero.")
@@ -36,6 +37,7 @@ def train_model(
         model=model,
         train_loader=train_loader,
         learning_rate=learning_rate,
+        pad_token_id=pad_token_id,
     )
 
     start_epoch = 0

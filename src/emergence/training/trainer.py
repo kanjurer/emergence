@@ -13,6 +13,7 @@ class Trainer:
         train_loader: DataLoader[tuple[torch.Tensor, torch.Tensor]],
         learning_rate: float = 3e-4,
         device: torch.device | None = None,
+        pad_token_id: int | None = None,
     ):
         self.model = model
         self.train_loader = train_loader
@@ -28,7 +29,9 @@ class Trainer:
             learning_rate=learning_rate,
         )
 
-        self.loss_function = nn.CrossEntropyLoss()
+        self.loss_function = nn.CrossEntropyLoss(
+            ignore_index=pad_token_id if pad_token_id is not None else -100
+        )
 
     def train_epoch(self) -> float:
         self.model.train()

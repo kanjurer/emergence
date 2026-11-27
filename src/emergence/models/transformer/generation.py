@@ -9,6 +9,7 @@ def generate(
     input_ids: torch.Tensor,
     max_new_tokens: int,
     temperature: float = 1.0,
+    eos_token_id: int | None = None,
 ) -> torch.Tensor:
     if temperature <= 0:
         raise ValueError("temperature must be positive")
@@ -19,27 +20,20 @@ def generate(
     model.eval()
 
     for _ in range(max_new_tokens):
-        # Keep only the most recent context_length tokens
         input_ids = input_ids[
             :, -model.token_embeddings.position_embedding.num_embeddings :
         ]
 
-        # Get predictions
         logits = model(input_ids)
-
-        # Use predictions from the final position
         logits = logits[:, -1, :]
-
-        # Apply temperature
         logits = logits / temperature
 
-        # Convert logits to probabilities
         probabilities = torch.softmax(logits, dim=-1)
-
-        # Sample the next token
         next_token = torch.multinomial(probabilities, num_samples=1)
 
-        # Append it to the sequence
         input_ids = torch.cat((input_ids, next_token), dim=1)
+
+        if eos_token_id is not None and (next_token == eos_token_id).all():
+            break
 
     return input_ids
