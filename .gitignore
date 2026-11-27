@@ -24,6 +24,7 @@ data/*
 
 # Model checkpoints
 !checkpoints/.gitkeep
+**/checkpoints/*
 
 # Generated experiment artifacts
 artifacts/*
