@@ -64,21 +64,22 @@ def train_model(
         loss = trainer.train_epoch()
         history.append(loss)
 
+        # Determine whether this is the best checkpoint.
+        is_best = loss < best_loss
         best_loss = min(best_loss, loss)
 
         if checkpoint_dir is not None:
-            # Save best checkpoint when loss improves.
-            if loss <= best_loss:
-                save_checkpoint(
-                    model=trainer.model,
-                    optimizer=trainer.optimizer,
-                    epoch=epoch + 1,
-                    loss=loss,
-                    best_loss=best_loss,
-                    path=str(checkpoint_dir / "best.pt"),
-                )
+            # Save checkpoint for every epoch.
+            save_checkpoint(
+                model=trainer.model,
+                optimizer=trainer.optimizer,
+                epoch=epoch + 1,
+                loss=loss,
+                best_loss=best_loss,
+                path=str(checkpoint_dir / f"checkpoint_{epoch + 1}.pt"),
+            )
 
-            # Save latest checkpoint after every epoch.
+            # Save latest checkpoint.
             save_checkpoint(
                 model=trainer.model,
                 optimizer=trainer.optimizer,
@@ -87,6 +88,17 @@ def train_model(
                 best_loss=best_loss,
                 path=str(checkpoint_dir / "latest.pt"),
             )
+
+            # Save best checkpoint when loss improves.
+            if is_best:
+                save_checkpoint(
+                    model=trainer.model,
+                    optimizer=trainer.optimizer,
+                    epoch=epoch + 1,
+                    loss=loss,
+                    best_loss=best_loss,
+                    path=str(checkpoint_dir / "best.pt"),
+                )
 
         print(
             f"Epoch [{epoch + 1}/{epochs}] "
