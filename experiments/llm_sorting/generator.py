@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 from torch import Tensor
 
-from emergence.data.tokenizer import CharacterTokenizer, SortingTokenizer
+from experiments.llm_sorting.tokenizer import SortingTokenizer
 from emergence.models.transformer.config import TransformerConfig
 from emergence.models.transformer.model import TransformerModel
 from emergence.models.transformer.generation import generate
@@ -14,7 +14,7 @@ class TextGenerator:
     def __init__(
         self,
         model: TransformerModel,
-        tokenizer: CharacterTokenizer | SortingTokenizer,
+        tokenizer: SortingTokenizer,
         device: torch.device,
     ) -> None:
         self.model = model
@@ -29,7 +29,7 @@ class TextGenerator:
         cls,
         checkpoint_path: Path,
         config: TransformerConfig,
-        tokenizer: CharacterTokenizer | SortingTokenizer,
+        tokenizer: SortingTokenizer,
         device: torch.device | None = None,
     ) -> "TextGenerator":
         if device is None:
